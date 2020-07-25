@@ -1,10 +1,9 @@
+import csv
 import sys
-from PySide2.QtWidgets import *
-from PySide2.QtGui import *
 import numpy as np
 import pyqtgraph as pg
-import csv
-import matplotlib.pyplot as plt
+from PySide2.QtGui import *
+from PySide2.QtWidgets import *
 
 xx_list = []
 yy_list = []
@@ -57,16 +56,17 @@ def extract_terms(fun):
         ret_[r] = ret_[r].replace("cos_h", "np.cosh")
         ret_[r] = ret_[r].replace("sin_h", "np.sinh")
         ret_[r] = ret_[r].replace("tan_h", "np.tanh")
+        ret_[r] = ret_[r].replace("sqrt", "np.sqrt")
         ret_[r] = ret_[r].replace("arccos_h", "np.arccosh")
         ret_[r] = ret_[r].replace("arcsin_h", "np.arcsinh")
         ret_[r] = ret_[r].replace("arctan_h", "np.arctanh")
         if ret_[r].find("^") != -1:
             ret_[r] = ret_[r].replace("x^", "pow(x,")
             ret_[r] = ret_[r] + ")"
-        ret_1 = ""
-        for el in ret_:
-            ret_1 = ret_1 + el
-        ret_1 = ret_1.replace("+", "", 1)
+    ret_1 = ""
+    for el in ret_:
+        ret_1 = ret_1 + el
+    ret_1 = ret_1.replace("+", "", 1)
     return ret_1
 
 
@@ -83,7 +83,8 @@ def create_y_range(fun, x_List):
     y_list = []
     for el in x_List:
         x = el
-        y_list.append(eval(fun))
+        y = eval(fun)
+        y_list.append(y)
     return y_list
 
 
@@ -110,8 +111,7 @@ def plot():
         yy_list = create_y_range(funct_, xx_list)
         pg.setConfigOption('background', 'k')
         pg.setConfigOption('foreground', 'b')
-        pg.plot(xx_list, yy_list,pen=(255,0,0))
-
+        pg.plot(xx_list, yy_list, pen=(255, 0, 0))
 
         return 3
     except:
@@ -140,7 +140,7 @@ class Main_window(QMainWindow):
         self.setFixedHeight(400)
         self.setFixedWidth(395)
         # Create widgets
-        self.function = QLineEdit("Enter function in x", self)
+        self.function = QLineEdit("Enter function in X", self)
         self.function.move(80, 50)
         self.function.setFixedWidth(290)
         self.label = QLabel("Function: ", self)
@@ -149,17 +149,21 @@ class Main_window(QMainWindow):
         self.label.move(25, 100)
         self.min_box = QLineEdit("Min", self)
         self.min_box.move(80, 100)
-        self.min_box.setFixedWidth(80)
+        self.min_box.setFixedWidth(104)
         self.label = QLabel("to", self)
-        self.label.move(170, 100)
+        self.label.move(191, 100)
         self.max_box = QLineEdit("Max", self)
-        self.max_box.move(193, 100)
-        self.max_box.setFixedWidth(80)
+        self.max_box.move(210, 100)
+        self.max_box.setFixedWidth(104)
         self.label = QLabel("Step size: ", self)
         self.label.move(25, 150)
         self.step_box = QLineEdit("", self)
         self.step_box.move(80, 150)
-        self.step_box.setFixedWidth(80)
+        self.step_box.setFixedWidth(104)
+        self.log_out = QLineEdit("", self)
+        self.log_out.move(210, 150)
+        self.log_out.setFixedWidth(160)
+        self.log_out.setDisabled(True)
         tex = ">>Enter valid inputs,Press Enter,Press Plot for plotting,Check Help..."
         self.log_box = QLineEdit(tex, self)
         self.log_box.move(25, 295)
@@ -204,19 +208,61 @@ class Main_window(QMainWindow):
         self.helpButton.clicked.connect(self.HelpApp)
         self.Evaluate_button.clicked.connect(self.error_detect)
         self.Export_button.clicked.connect(Export)
+        self.succ_message = QLabel(self)
+        self.succ_message.setText("<font color='blue'>*Ready to plot</font>")
+        self.succ_message.move(256, 150)
 
     def return_inputText(self):
+        flag = 1
+        flag_ = 1
         write_ = open("History.txt", "w")
         text_ = ["", "", "", ""]
         text_[0] = text_[0] + self.function.text() + "\n"
         text_[1] = text_[1] + self.min_box.text() + "\n"
         text_[2] = text_[2] + self.max_box.text() + "\n"
         text_[3] = text_[3] + self.step_box.text() + "\n"
-        if float(text_[3]) <= 0:
-            QMessageBox.warning(self, "Warning", "Negative or zero step size is illegal\nstep size is set by default value")
+        try:
+            if float(text_[3]) <= 0:
+                flag_ = 0
+                self.succ_message.clear()
+                self.succ_message.setText("<font color='orange'>*Warning...</font>")
+                self.succ_message.show()
+                QMessageBox.warning(self, "Warning",
+                                    "Negative or zero step size is illegal\nstep size is set by default value")
+
+        except:
+            flag = 0
+            self.succ_message.clear()
+            self.succ_message.setText("<font color='red'>*Invalid input...</font>")
+            self.succ_message.show()
+            self.Evaluate_button.setEnabled(False)
+            self.Export_button.setEnabled(False)
+            QMessageBox.critical(self, ' ERROR', 'Invalid step size input', QMessageBox.StandardButton.Abort)
+        try:
+            if float(text_[2]) < float(text_[1]):
+                flag = 0
+                self.succ_message.clear()
+                self.succ_message.setText("<font color='red'>*Invalid input...</font>")
+                self.succ_message.show()
+                QMessageBox.critical(self, ' ERROR', 'Invalid X-Range input\nMin value is larger than Max value', QMessageBox.StandardButton.Abort)
+                self.Evaluate_button.setEnabled(False)
+                self.Export_button.setEnabled(False)
+
+        except:
+            flag = 0
+            self.succ_message.clear()
+            self.succ_message.setText("<font color='red'>*Invalid input...</font>")
+            self.succ_message.show()
+            QMessageBox.critical(self, ' ERROR', 'Invalid X-Range input', QMessageBox.StandardButton.Abort)
+            self.Evaluate_button.setEnabled(False)
+            self.Export_button.setEnabled(False)
         write_.writelines(text_)
-        self.Evaluate_button.setEnabled(True)
-        self.Export_button.setEnabled(True)
+        if flag == 1:
+            if flag_ == 1:
+                self.succ_message.clear()
+                self.succ_message.setText("<font color='blue'>*Click plot</font>")
+                self.succ_message.show()
+            self.Evaluate_button.setEnabled(True)
 
     def ExitApp(self):
         userInput = QMessageBox.question(self, "  Confirm Exit", "Are you sure want to exit GCT ?",
@@ -238,11 +284,20 @@ class Main_window(QMainWindow):
     def error_detect(self):
         fr = plot()
         if fr == 1:
-            QMessageBox.critical(self, ' ERROR', 'Missing data', QMessageBox.StandardButton.Abort)
+            pass
         elif fr == 2:
-            QMessageBox.critical(self, ' ERROR', 'Invalid input', QMessageBox.StandardButton.Abort)
-        #elif fr == 3:
-         #   QMessageBox.information(self, 'Successful', 'Successfully plotted')
+            self.succ_message.clear()
+            self.succ_message.setText("<font color='red'>*Invalid input...</font>")
+            self.succ_message.show()
+            self.Evaluate_button.setEnabled(False)
+            self.Export_button.setEnabled(False)
+            QMessageBox.critical(self, ' ERROR', 'Invalid input function\nPlease check help', QMessageBox.StandardButton.Abort)
+        elif fr == 3:
+            self.Export_button.setEnabled(True)
+            self.succ_message.clear()
+            self.succ_message.setText("<font color='green'>*Successfully...</font>")
+            self.succ_message.move(250,150)
+            self.succ_message.show()
 
     def icon_modes(self):
         icon = QIcon("logo_size_invert.jpg")
