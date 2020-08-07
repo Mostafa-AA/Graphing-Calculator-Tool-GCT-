@@ -134,7 +134,7 @@ class Main_window(QMainWindow):
     def __init__(self, parent=None):
         super(Main_window, self).__init__(parent)
         self.setWindowTitle("  Graphing Calculator Tool (GCT)")
-        self.setWindowIcon(QIcon("ICON.png"))
+        self.setWindowIcon(QIcon(".img\\ICON.png"))
         self.setGeometry(200, 100, 395, 400)
         self.icon_modes()
         self.setFixedHeight(400)
@@ -300,7 +300,7 @@ class Main_window(QMainWindow):
             self.succ_message.show()
 
     def icon_modes(self):
-        icon = QIcon("logo_size_invert.jpg")
+        icon = QIcon(".img\\logo_size_invert.jpg")
         label1 = QLabel('sample', self)
         pixmap = icon.pixmap(150, 25, QIcon.Active, QIcon.On)
         label1.setPixmap(pixmap)
